@@ -1,1 +1,186 @@
-test
+# DeuParl Corpus
+
+The goal is to create a diachronic corpus of German Reichstag (1867-1942) and Bundestag (1949-2021, 19 sessions) protocols.
+
+The diachronic corpus should have the following slices:
+
+1. **1-KR1**: Kaiserreich 1 (1867-1890)
+2. **2-KR2**: Kaiserreich 2 (1890-1918)
+3. **3-WR**: Weimarer Republik (1918-1933)
+4. **4-NS**: Nationalsozialismus (1933-1942)
+5. **5-CDU1**: CDU 1 (sessions 1, 2, 3, 4, 5)
+6. **6-SPD1**: SPD 1 (sessions 6, 7, 8, 9)
+7. **7-CDU2**: CDU 2 (sessions 10, 11, 12, 13)
+8. **8-SPD2**: SPD 2 (sessions 14, 15)
+9. **9-CDU3**: CDU 3 (sessions 16, 17, 18, 19)
+
+This has been done before in this paper:
+
+**Diachronic Analysis of German Parliamentary Proceedings: Ideological Shifts through the Lens of Political Biases**
+
+- https://arxiv.org/abs/2108.06295
+- https://github.com/tobiwalter/Investigating-Antisemitic-Bias-in-German-Parliamentary-Proceedings
+- https://tudatalib.ulb.tu-darmstadt.de/handle/tudatalib/2889?show=full
+
+However, their dataset creation process builds on source data that we cannot determine how it has been processed.
+
+With this project, the goal is to create a cleaner and improved dataset where every step of the creation process is clear.
+
+Since many groups have worked on this before, there is a large zoo of projects, repositories, and resources. I tried to include everything that can be built on in this repository and included links to
+the older projects.
+
+## Corpus Creation Pipeline
+
+You can find the repository including the data on slurm: `/storage/nllg/compute-share/bodensohn/deuparl/DeuParl`
+
+Also note that the scripts do not clear the data folders, so you have to delete them by hand if you want to re-execute a step.
+
+The corpus creation pipeline has the following steps:
+
+### 1. Data Collection and Preprocessing
+
+The Reichstag protocols and the Bundestag protocols come from two separate sources:
+
+- Reichstag protocols: https://www.reichstagsprotokolle.de
+- Bundestag protocols: https://www.bundestag.de/services/opendata
+
+Because of this, the data collection is different for the Reichstag and Bundestag protocols.
+
+**Reichstag Protocols:**
+
+The raw source data is located in `/storage/nllg/compute-share/eger/melvin/reichstagsprotokolle` (~500GB). It is made up of `bsbXXXXXXXX` folders, each of which contains a single `xml` folder which
+itself contains many `bsbXXXXXXXX_XXXXX.xml` documents. These `.xml` files each comprise a single page of parliament protocols obtained via optical character recognition. They include the line breaks
+from the original pages.
+
+Furthermore, there is a "Konkordanz" (`BSB_Reichstagsprotkolle_Konkordanz.csv`) which states the year each of the `bsbXXXXXXXX` folders belongs to.
+
+The Python script `1_collect_reichstag.py` goes through the raw source data, extracts the raw text from the `.xml` files, and uses the "Konkordanz" to create one bucket of documents for each year
+in `data/1_collected/Reichstag/`. Furthermore, it can (optionally) apply some preprocessing corrections.
+
+- This step is based on this project: https://github.com/SteffenEger/Corpus
+- The source data has been obtained from: `/storage/nllg/compute-share/eger/melvin/reichstagsprotokolle/`
+
+**Bundestag Protocols:**
+
+The raw data is located in `data/source/Bundestag`. For each session (1-19) there is a folder of `.xml` files.
+
+- This step is based on this project: https://github.com/SteffenEger/bundestagsprotokolle
+
+### 2. Preprocessing
+
+The second step is to preprocess the collected documents. This could for example be removing noise by filtering out the start and end of the documents that are not actually part of the protocol (check out `tobiwalter_process_reichstag_data.py` and `tobiwalter_process_reichstag_data.py`).
+
+**Reichstag Protocols:**
+
+The Python script `2_preprocess_reichstag.py` goes through the collected documents in `data/1_collected/Reichstag/`, preprocesses them, and stores the result in `data/2_preprocessed/Reichstag/`.
+
+**Bundestag Protocols:**
+
+The Python script `2_preprocess_bundestag.py` goes through the collected documents in `data/1_collected/Bundestag/`, preprocesses them, and stores the result in `data/2_preprocessed/Bundestag/`.
+
+### 3. OCR Post-Correction
+
+**Reichstag Protocols:**
+
+Since the Reichstag protocols have been digitized using optical character recognition, they contain character errors (e.g. "l" instead of "i"). The goal of OCR post-correction is to fix these errors.
+
+Our approach is to run the Reichstag protocols through MBART to hopefully fix the character errors.
+
+You can use MBART via [fairseq](https://github.com/pytorch/fairseq/tree/main/examples/mbart) and via [huggingface](https://huggingface.co/transformers/model_doc/mbart.html), and we found that using
+huggingface it a lot easier.
+
+We downloaded the MBART model from here: https://huggingface.co/facebook/mbart-large-cc25
+
+There is some ground truth training data that was generated by fixing character errors by hand (see `data/ocr_post_correction/raw_training_data`), which I combined to a single file of training
+instances (`data/ocr_post_correction/data.csv`).
+
+However, we found that running MBART without any finetuning already seems to give good results.
+
+`train_mbart.py` fine-tunes a pre-trained MBART model on the training data. `inference_mbart.py` applies this model to some test data. Note that this step is not finished.
+
+There has been previous work on OCR post-correction for DeuParl by Martin Kerscher, however I could not get this to work:
+
+- https://github.com/SteffenEger/ocr_post_correction
+- https://docs.google.com/spreadsheets/d/1qq5vqs9Zxak7XHLERq8_r7lgldqFRp9QcxQ0dl2u0nw/edit?usp=sharing
+
+Another approach could be to use BERT-Defense:
+
+- https://github.com/yannikkellerde/BERT-Defense
+
+The Python script `3_ocr_post_correct_reichstag.py` uses the documents in `data/2_preprocessed/Reichstag/`, applies OCR post-correction to them, and stores them in `data/3_ocr_post_corrected/Reichstag/`.
+
+**Bundestag Protocols:**
+
+Since the Bundestag protocols have not been digitized using optical character recognition, OCR post-correction is not necessary.
+
+The Python script `3_ocr_post_correct_bundestag.py` uses the documents in `data/2_preprocessed/Bundestag/`and copies them to `data/3_ocr_post_corrected/Bundestag/` since no OCR post-correction is required.
+
+### 4. Spelling Normalization
+
+The idea behind spelling normalization is to map multiple (historical) spellings of a word (e.g. "Theil") to a single canonical, current form (e.g. "Teil").
+
+This paper provides a good overview over different spelling normalization approaches:
+
+**A Large-Scale Comparison of Historical Text Normalization Systems**
+
+- https://arxiv.org/abs/1904.02036
+- https://github.com/coastalcph/histnorm
+
+One approach could be to use a simple tool like Norma.
+
+Furthermore, it could be worthwhile to check out if spelling normalization is even necessary after OCR post-correction.
+
+**Reichstag Protocols:**
+
+The Python script `4_spelling_normalize_reichstag.py` uses the documents in `data/3_ocr_post_corrected/Reichstag/`, applies spelling normalization to them, and stores them in `data/4_normalized/Reichstag/`.
+
+**Bundestag Protocols:**
+
+The Python script `4_spelling_normalize_bundestag.py` uses the documents in `data/3_ocr_post_corrected/Bundestag/`, applies spelling normalization to them, and stores them in `data/4_normalized/Bundestag/`.
+
+### 5. Postprocessing
+
+The next step would be to do some kind of postprocessing, which could include the following steps:
+
+- sentence-split the documents so that one line is one sentence, e.g. using [Stanza](https://stanfordnlp.github.io/stanza/)
+- filtering, e.g. filter out lists of names (check out `code_from_other_projects/patterns_bundestag.py`, `code_from_other_projects/tobiwalter_process_reichstag_data.py` and `code_from_other_projects/tobiwalter_process_reichstag_data.py`)
+- sanity checks
+
+**Reichstag Protocols:**
+
+The Python script `5_postprocess_reichstag.py` uses the documents in `data/4_normalized/Reichstag/`, postprocesses them, and stores them in `data/5_postprocessed/Reichstag/`.
+
+**Bundestag Protocols:**
+
+The Python script `5_postprocess_bundestag.py` uses the documents in `data/4_normalized/Bundestag/`, postprocesses them, and stores them in `data/5_postprocessed/Bundestag/`.
+
+### 6. Slicing
+
+The final step partitions the documents into slices.
+
+**Reichstag Protocols:**
+
+The Python script `6_slice_reichstag.py` uses the documents in `data/5_postprocessed/Reichstag/`, creates the first four slices, and stores them in `data/6_sliced/`.
+
+**Bundestag Protocols:**
+
+The Python script `6_slice_bundestag.py` uses the documents in `data/5_postprocessed/Bundestag/`, creates the last five slices, and stores them in `data/6_sliced/`.
+
+## Other Resources
+
+The folder `code_from_other_projects` contains scripts that have been obtained from other projects and may include some helpful snippets (e.g. regular expressions).
+
+`tobiwalter_process_reichstag_data.py` and `tobiwalter_process_reichstag_data.py` summarize the preprocessing step as done by Tobias Walter in https://arxiv.org/abs/2108.06295.
+
+**Since they were written for different source data, they cannot be easily integrated into this project.**
+
+## Slurm Cluster
+
+- `slurm.ukp.informatik.tu-darmstadt.de`
+- `/storage/nllg/compute-share/bodensohn/deuparl/Deuparl`
+
+You can use the `run_python_script.sh` to run the Python scripts on the cluster. You may replace the script file name, the job name, the output file name, and the virtual environment.
+
+Make sure to install torch in your virtual environment so that it uses CUDA (https://pytorch.org/).
+
+Check out the UKP Wiki for more information.
