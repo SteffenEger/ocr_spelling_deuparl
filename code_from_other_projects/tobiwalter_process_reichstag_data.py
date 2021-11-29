@@ -22,7 +22,7 @@ def remove_umlauts(sentence: List) -> str:
     return text_out
 
 
-def remove_hyphens(sentence: str, split_chars="-|—|–") -> str:
+def remove_hyphens(sentence: str, split_chars="-|—|–|¬") -> str:
     """Remove hyphens that are still prepending or appending words, After splitting up chain words -> They are either noise or a chain word was not successfully split"""
 
     new_text = sentence
