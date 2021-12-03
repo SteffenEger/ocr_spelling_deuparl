@@ -1,13 +1,9 @@
+import collections
 import glob
 import os
-import re
-from collections import defaultdict
-from datetime import datetime
-from typing import List
+from xml.etree import ElementTree
 
-from tqdm import tqdm
-import dateparser as dateparser
-
+import tqdm
 
 if __name__ == "__main__":
 
@@ -18,94 +14,97 @@ if __name__ == "__main__":
     # load the mapping
     mapping = {}
 
-    year = 1868
+    with open("data/source/Reichstag/BSB_Reichstagsprotkolle_Konkordanz.csv", encoding="utf-8") as file:
+        # skip header
+        _ = file.readline()
+        _ = file.readline()
+        _ = file.readline()
 
-    print(os.getcwd())
-    os.chdir(os.getcwd() + "/data/1_collected/Reichstag/{}".format(year))
+        for line in file:
+            if line != "":
+                bsb_id = line[:line.index("\t")]
+                year = line[line.rindex("\t") + 1:-1]
+                mapping[bsb_id] = year
 
-    for filename in tqdm(glob.glob("*.txt".format(year))):
+    bsb_folders = glob.glob("/storage/nllg/compute-share/eger/melvin/reichstagsprotokolle/bsb*/")
 
-        if "fix" in filename:
-            continue
+    # load the documents
+    idx_per_year = collections.Counter()
+    for bsb_folder in tqdm.tqdm(bsb_folders):
+        year = mapping[bsb_folder[-12:-1]]
 
-        with open('1.txt', encoding="utf-8") as file:
+        file_paths = list(sorted(glob.glob(bsb_folder + "xml/*.xml")))
 
-            lines = file.readlines()
+        ##########################################################################
+        # source: https://github.com/SteffenEger/Corpus/blob/master/XML_Parsing.py
+        ##########################################################################
+        lines = []
+        for file_path in file_paths:
+            punctuation = ['.', ',', ':', ';', '!', '?', '(', ')']
+            root = ElementTree.parse(file_path).getroot()
 
-            startline = 0
-            if year == 1867:
-                for line in lines:
-                    if "Kirth's" not in line:
-                        startline += 1
-                    else:
-                        break
+            # taking into account the XML files' particularities. The given corpus was got as the result of the work of Fine Reader programme.
+            for line in root.iter('{http://www.abbyy.com/FineReader_xml/FineReader6-schema-v1.xml}line'):
+                s = []
+                for char_param in line.iter('{http://www.abbyy.com/FineReader_xml/FineReader6-schema-v1.xml}charParams'):
+                    # separating text into lines
+                    if char_param.text == None:
+                        char_param.text = " "
+                    # if char_param.text in punctuation:
+                    #     char_param.text = char_param.text + " "
+                    s.append(char_param.text)
+                lines.append("".join(s))
 
-            lines = lines[startline:]
+        text = "\n".join(lines)
 
-            #fix splitted words
-            lines_fix, buffer = [], []
-            for line in lines:
-                if line[-2:] == '¬\n' or line[-2:] == '-\n' or line[-2:] == '—\n' or line[-2:] == '–\n':
-                    buffer.append(line[:-2])
-                elif len(buffer) != 0 and line[:1].islower():
-                    buffer.append(line[:-1])
-                    lines_fix.append("".join(buffer))
-                    buffer = []
-                elif len(buffer) != 0:
-                    buffer.append(line[:-1])
-                    lines_fix.append("-".join(buffer))
-                    buffer = []
-                else:
-                    lines_fix.append(line)
-                lines = lines_fix
+        ######################################################################################
+        # source: https://github.com/SteffenEger/Corpus/blob/master/Text_U%CC%88berarbeitet.py
+        ######################################################################################
+        #
+        # # concatenates lines based on "-", better to do this in postprocessing after OCR post-correction
+        #
+        # new_lines = []
+        # prevLine = ""
+        # for line in lines:
+        #     line = line.strip()
+        #     if line[-1] == "¬" or line[-1] == "-":
+        #         prevLine = prevLine + line[:-1]
+        #     else:
+        #         new_lines.append(prevLine + line)
+        #         prevLine = ""
+        # lines = new_lines
+        # text = "\n".join(lines)
 
-        # remove double spaces
-            lines = [re.sub('\s\s+', ' ', line).strip() for line in lines]
+        #############################################################################
+        # https://github.com/SteffenEger/Corpus/blob/master/Additional_Corrections.py
+        #############################################################################
+        #
+        # # applies some text normalization (not necessary and not working)
+        #
+        # def text_normalization(raw_data):
+        #     word_list = []
+        #     numbers = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+        #     sent_text = nltk.sent_tokenize(raw_data)
+        #     for sent in sent_text:
+        #         for word in nltk.word_tokenize(sent):
+        #             if len(word) > 2 and word[0] in numbers and word[1] not in numbers:
+        #                 word_list.append(word[0])
+        #                 word_list.append(" ")
+        #                 word_list.append(word[1:])
+        #             else:
+        #                 word_list.append(word)
+        #         print(" ".join(word_list))
+        #         word_list = []
+        #
+        #     return word_list
+        #
+        #
+        # def sents_creation(data):
+        #     sent_text = nltk.sent_tokenize(data)
+        #     return sent_text
 
-        # remove noisy digits
-        # 'Remove digits that are appending, prepending or in the middle of some words, e.g. because of faulty OCR'
-            lines = [re.sub(r'\b\d(?P<quote>[A-Za-zßäöüÄÖÜ]+)\b',
-                        '\g<quote>', line) for line in lines]
-            lines = [re.sub(r'\b(?P<quote>[A-Za-zßäöüÄÖÜ]+)\d\b',
-                        '\g<quote>', line) for line in lines]
-            lines = [re.sub(r'\b(?P<quote>[A-Za-zßäöüÄÖÜ]+)\d(?P<name>[A-Za-zßäöüÄÖÜ]*)\b', '\g<quote> \g<name>', line) for line in lines]
-
-        # remove dash and minus signs
-        # 'Remove lone standing dashes/hyphens at beginning, middle and end of lines.'
-            lines = [re.sub(r'\s(-|—|–|\s)+\s', ' ', line) for line in lines]
-            lines = [re.sub(r'^(-|—|–|\s)+\s', '', line) for line in lines]
-            lines = [re.sub(r'\b\s(-|—|–|\s)+$', '', line) for line in lines]
-
-        # remove linebreaks
-            lines = [re.sub(r'[\n\t]', '', line).strip() for line in lines]
-
-        # replace digits
-            #lines = [re.sub(r'\d+', ' 0 ', line).strip() for line in lines]
-
-        # remove double spaces
-            lines = [re.sub('\s\s+', ' ', line).strip() for line in lines]
-
-        # reduce numerical sequences
-            lines = [re.sub(r'((0)\s?){2,}', '\\2 ', line).strip() for line in lines]
-
-        # filter doc
-            lines = [line for line in lines if len(line) > 1]
-
-        # remove german chain words
-        # lines = [remove_german_chainwords(line) for line in lines]  # FIXME: cannot do this because of missing package char_split
-
-        # Fix splited Words at the end of an line
-        # Auf-Die-Lange-Bank-Schieben will be incorrect
-        # -|—|–|¬
-
-        # lemmatize
-        # lines = [lemmatizer.lemmatize(line) for line in lines]  # FINDME: not doing lemmatization
-
-        # lowercase
-            lines_tokens = [[tok.lower() for tok in line.split()] for line in lines]
-
-        # save file
-            name = "fix-" + filename
-            with open(name, "w", encoding="utf-8") as file:
-                for line in lines:
-                    file.write(line + "\n")
+        idx_per_year[year] += 1
+        if not os.path.isdir(f"data/1_collected/Reichstag/{year}/"):
+            os.makedirs(f"data/1_collected/Reichstag/{year}/")
+        with open(f"data/1_collected/Reichstag/{year}/{idx_per_year[year]}.txt", "w", encoding="utf-8") as file:
+            file.write(text)
