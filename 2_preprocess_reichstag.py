@@ -32,7 +32,7 @@ if __name__ == "__main__":
                         else:
                             break
 
-                if startline != lines.count():
+                if startline != len(lines):
                     lines = lines[startline:]
 
                 # fix splitted words at the end of a line
