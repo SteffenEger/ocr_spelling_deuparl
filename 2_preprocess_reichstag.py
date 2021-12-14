@@ -7,31 +7,36 @@ import tqdm as tqdm
 
 
 def newLine(sentance, dotAt):
-    if (dotAt > 1 and sentance[dotAt- 2] == ' ') or dotAt == 1:
-        word1 = sentance[dotAt- 1:dotAt + 1]
-        if word1 == "a." or word1 == "b." or word1 == "d." or word1 == "K." or word1 == "s." or word1 == "S." or word1 == "u." or word1 == "v." or word1 == "z." or word1 == "Z.":
+    if (dotAt > 1 and (sentance[dotAt- 2] == ' ' or sentance[dotAt- 2] == '.')) or dotAt == 1:
+        word1 = sentance[dotAt- 1:dotAt]
+        if word1 == "a" or word1 == "b" or word1 == "d" or word1 == "i" or word1 == "K" or word1 == "m" or word1 == "s" or word1 == "S" or word1 == "u" or word1 == "v" or word1 == "z" or word1 == "Z":
             return False
-    if dotAt > 2:
-        word2 = sentance[dotAt- 3:dotAt + 1]
-        if word2 == " ca." or word2 == " rc." or word2 == " re." or word2 == " Fl.":
+            
+    if (dotAt > 2 and sentance[dotAt - 3] == ' ') or dotAt == 2:
+        word2 = sentance[dotAt - 2:dotAt]
+        if word2 == "ca" or word2 == "rc" or word2 == "re" or word2 == "Fl" or word2 == "Dr" or word2 == "St" or word2 == "Fr" or word2 == "Kr" or word2 == "Pr":
             return False
-    if dotAt > 3:
-        word3 = sentance[dotAt- 4:dotAt + 1]
-        if word3 == " ult.":
+
+    if (dotAt > 3 and sentance[dotAt- 4] == ' ') or dotAt == 3:
+        word3 = sentance[dotAt- 3:dotAt]
+        if word3 == "Bew" or word3 == "Grf" or word3 == "Str" or word3 == "Inf" or word3 == "Reg" or word3 == "Grs" or word3 == "Kgr":
             return False
-    if dotAt > 4:
-        word4 = sentance[dotAt- 4:dotAt + 1]
-        if word4 == " ca.":
+
+    if (dotAt > 4 and sentance[dotAt- 5] == ' ') or dotAt == 4:
+        word4 = sentance[dotAt- 4:dotAt]
+        if word4 == "Prov" or word4 == "Thlr":
             return False
-    if dotAt > 5:
-        word5 = sentance[dotAt- 5:dotAt + 1]
-        if word5 == " ca.":
-            return False       
-    if (len(sentance) - dotAt) > 1 and sentance[dotAt + 1] == '-':
+
+    if (dotAt > 5 and sentance[dotAt- 6] == ' ') or dotAt == 5:
+        word5 = sentance[dotAt- 5:dotAt]
+        if word5 == "Preuß":
+            return False
+
+    if (len(sentance) - dotAt) > 1 and sentance[dotAt + 1] == '-'  and sentance[dotAt + 1] == ':':
         return False
-    if sentance[dotAt - 1] == '0' or (dotAt > 1 and sentance[dotAt - 2] == '0'):
-        return True
-    if (len(sentance) - dotAt) > 1 and sentance[dotAt + 1].isupper():
+    if re.search('[0-9]', sentance[dotAt - 1]) or re.search('[0-9]', sentance[dotAt - 2]):
+        return False
+    if (len(sentance) - dotAt) > 1 and (sentance[dotAt + 1].isupper() or sentance[dotAt + 1] == '.'):
         return True
     if (len(sentance) - dotAt) > 2 and sentance[dotAt + 2].isupper():
         return True
@@ -67,9 +72,6 @@ if __name__ == "__main__":
                             break
                     if startline != len(lines):
                         lines = lines[startline:]
-                else:
-                    break
-
 
                 # fix splitted words at the end of a line
                 # ... Bundes-
@@ -110,37 +112,41 @@ if __name__ == "__main__":
                 lines = [re.sub(r'^(-|—|–|\s)+\s', '', line) for line in lines]
                 lines = [re.sub(r'\b\s(-|—|–|\s)+$', '', line)
                          for line in lines]
+                # remove some random chars
+                lines = [re.sub(r'(<|>|\^|«|»|\*)', ' ', line) for line in lines]
 
                 # remove linebreaks
                 lines = [re.sub(r'[\n\t]', '', line).strip() for line in lines]
 
                 # replace digits
-                lines = [re.sub(r'\d+', ' 0 ', line).strip() for line in lines]
+                #lines = [re.sub(r'\d+', ' 0 ', line).strip() for line in lines]
 
                 # reduce numerical sequences
                 lines = [re.sub(r'((0)\s?){2,}', '\\2 ', line).strip() for line in lines]
 
                 # filter doc
                 lines = [line for line in lines if len(line) > 1]
+                lines = [line for line in lines if line.count('/') < 4]
+                lines = [line for line in lines if line.count('_') < 2]
 
                 # lowercase
                 lines_tokens = [[tok.lower() for tok in line.split()]
                             for line in lines]
 
-                lines = [re.sub(r'(<|>|\^|«|»|\*)', ' ', line) for line in lines]
-                lines = [line for line in lines if line.count('/') < 4]
-                lines = [line for line in lines if line.count('_') < 2]
-
                 #"""
                 a = 0
                 lines_fix, buffer = [], []
                 for line in lines:
-                    for c  in range (1, len (line)): 
+                    for c  in range (len (line)): 
 
-                        if c == len(line) -1 and (line[c] != '.' and line[c] != '?' and line[c] != '!'):
+                        if c == 0 and line[0].isdigit():
+                            lines_fix.append("".join(buffer))
+                            buffer = []
+
+                        elif c == len(line) -1 and (line[c] != '.' and line[c] != '?' and line[c] != '!'):
                             buffer.append(line[a - len(line) - 1:] + " ")
                         
-                        if (line[c] == '.' or line[c] == '?' or line[c] == '!') and newLine(line, c):
+                        elif (line[c] == '.' or line[c] == '?' or line[c] == '!') and newLine(line, c):
                             buffer.append(line[a - len(line) - 1: c + 1])
                             lines_fix.append("".join(buffer))
                             buffer = []
@@ -149,6 +155,8 @@ if __name__ == "__main__":
                     
                 lines = lines_fix
                 #"""
+
+                lines = [line for line in lines if re.search('[a-zA-Z]', line)]
 
                 count_per_bucket[bucket_name] += 1
                 with open(f"data/2_preprocessed/Reichstag/{bucket_name}/{count_per_bucket[bucket_name]}.txt", "w", encoding="utf-8") as file:
