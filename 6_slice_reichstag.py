@@ -1,12 +1,12 @@
 import collections
 import glob
 import os
-
+from natsort import natsorted
 import tqdm
 
 if __name__ == "__main__":
 
-    bucket_folders = list(sorted(glob.glob("data/5_postprocessed/Reichstag/*/")))
+    bucket_folders = list(natsorted(glob.glob("data/5_postprocessed/Reichstag/*/")))
 
     idx_per_slice = collections.Counter()
     for bucket_folder in tqdm.tqdm(bucket_folders):
@@ -25,7 +25,7 @@ if __name__ == "__main__":
         if not os.path.isdir(f"data/6_sliced/{slice_name}/"):
             os.makedirs(f"data/6_sliced/{slice_name}/")
 
-        file_paths = list(sorted(glob.glob(bucket_folder + "*.txt")))
+        file_paths = list(natsorted(glob.glob(bucket_folder + "*.txt")))
 
         for file_path in file_paths:
             with open(file_path, encoding="utf-8") as file:
