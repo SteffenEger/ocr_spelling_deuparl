@@ -1,7 +1,7 @@
 import glob
 import os
 from xml.etree import ElementTree
-
+from natsort import natsorted
 import tqdm
 
 if __name__ == "__main__":
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     for bucket_folder in tqdm.tqdm(bucket_folders):
         bucket_name = int(bucket_folder[bucket_folder[:-1].rindex("/") + 1:-1])  # Bundestag -> bucket name is term number
 
-        file_paths = list(sorted(glob.glob(bucket_folder + "*.xml")))
+        file_paths = list(natsorted(glob.glob(bucket_folder + "*.xml")))
 
         if not os.path.isdir(f"data/1_collected/Bundestag/{bucket_name}/"):
             os.makedirs(f"data/1_collected/Bundestag/{bucket_name}/")

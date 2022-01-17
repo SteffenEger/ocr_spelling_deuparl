@@ -2,7 +2,7 @@ import collections
 import glob
 import os
 import re
-
+from natsort import natsorted
 import tqdm as tqdm
 
 pattern = re.compile(r"""   
@@ -85,7 +85,7 @@ def removeOne(sentance, oneAt):
 
 if __name__ == "__main__":
 
-    bucket_folders = list(sorted(glob.glob("data/1_collected/Reichstag/*/")))
+    bucket_folders = list(natsorted(glob.glob("data/1_collected/Reichstag/*/")))
 
     count_per_bucket = collections.Counter()
     for bucket_folder in tqdm.tqdm(bucket_folders):
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         if not os.path.isdir(f"data/2_preprocessed/Reichstag/{bucket_name}/"):
             os.makedirs(f"data/2_preprocessed/Reichstag/{bucket_name}/")
 
-        file_paths = list(sorted(glob.glob(bucket_folder + "*.txt")))
+        file_paths = list(natsorted(glob.glob(bucket_folder + "*.txt")))
 
         for file_path in file_paths:
             with open(file_path, encoding="utf-8") as file:

@@ -2,7 +2,7 @@ import collections
 import glob
 import os
 from xml.etree import ElementTree
-
+from natsort import natsorted
 import tqdm
 
 if __name__ == "__main__":
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     for bsb_folder in tqdm.tqdm(bsb_folders):
         year = mapping[bsb_folder[-12:-1]]
 
-        file_paths = list(sorted(glob.glob(bsb_folder + "xml/*.xml")))
+        file_paths = list(natsorted(glob.glob(bsb_folder + "xml/*.xml")))
 
         ##########################################################################
         # source: https://github.com/SteffenEger/Corpus/blob/master/XML_Parsing.py
