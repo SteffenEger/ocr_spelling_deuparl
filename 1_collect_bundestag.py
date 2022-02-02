@@ -23,6 +23,9 @@ if __name__ == "__main__":
         if bucket_name != 19:
 
             for idx, file_path in enumerate(file_paths):
+                
+                if os.path.isfile(f"data/1_collected/Bundestag/{bucket_name}/{idx + 1}.txt"):
+                    continue
 
                 ##################################################################################################
                 # source: https://github.com/SteffenEger/bundestagsprotokolle/blob/master/Bundestag_XML_Parsing.py
@@ -80,7 +83,10 @@ if __name__ == "__main__":
         else:  # session 19
 
             for idx, file_path in enumerate(file_paths):
-
+                
+                if os.path.isfile(f"data/1_collected/Bundestag/{bucket_name}/{idx + 1}.txt"):
+                    continue
+                
                 #######################################################################################
                 # source: https://github.com/SteffenEger/bundestagsprotokolle/blob/master/19_Periode.py
                 #######################################################################################

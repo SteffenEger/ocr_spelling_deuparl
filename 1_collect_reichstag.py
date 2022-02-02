@@ -35,6 +35,13 @@ if __name__ == "__main__":
 
         file_paths = list(natsorted(glob.glob(bsb_folder + "xml/*.xml")))
 
+        idx_per_year[year] += 1
+        if not os.path.isdir(f"data/1_collected/Reichstag/{year}/"):
+            os.makedirs(f"data/1_collected/Reichstag/{year}/")
+
+
+        if os.path.isfile(f"data/1_collected/Reichstag/{year}/{idx_per_year[year]}.txt"):
+            continue
         ##########################################################################
         # source: https://github.com/SteffenEger/Corpus/blob/master/XML_Parsing.py
         ##########################################################################
@@ -55,9 +62,5 @@ if __name__ == "__main__":
 
         text = "\n".join(lines)
 
-
-        idx_per_year[year] += 1
-        if not os.path.isdir(f"data/1_collected/Reichstag/{year}/"):
-            os.makedirs(f"data/1_collected/Reichstag/{year}/")
         with open(f"data/1_collected/Reichstag/{year}/{idx_per_year[year]}.txt", "w", encoding="utf-8") as file:
             file.write(text)
