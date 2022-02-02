@@ -59,11 +59,12 @@ if __name__ == "__main__":
                 self.y_tokenized = tokenizer(y_data, return_tensors="pt", padding="longest")
 
         def __len__(self):
-            return len(self.x_tokenized)
+            return len(self.x_tokenized["input_ids"])
 
         def __getitem__(self, index):
-            return self.x_tokenized["input_ids"][index].tolist(), self.x_tokenized["attention_mask"][index].tolist(), \
-                   self.y_tokenized["input_ids"][index].tolist()
+            return self.x_tokenized["input_ids"][index].tolist(), \
+                    self.x_tokenized["attention_mask"][index].tolist(), \
+                    self.y_tokenized["input_ids"][index].tolist()
 
 
     class TrainingBatch:
@@ -85,6 +86,7 @@ if __name__ == "__main__":
 
     print("Load the dataset.")
     training_dataset = MyDataset(X_train, Y_train)
+    eval_dataset = MyDataset(X_dev, Y_dev)
 
     print("Initialize model and optimizer.")
     model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-cc25").to(device)
@@ -93,19 +95,20 @@ if __name__ == "__main__":
 
     print("Create dataloader.")
     dataloader = DataLoader(training_dataset, collate_fn=TrainingBatch, batch_size=8, shuffle=True)
+    eval_dataloader = DataLoader(eval_dataset, collate_fn=TrainingBatch, batch_size=8)
 
     print("Train.")
     best_loss = -1
-    for epoch in range(1, 1):  # FINDME: control number of epochs (or do not fine-tune at all)
+    for epoch in range(1, 10):  # FINDME: control number of epochs (or do not fine-tune at all)
         print(f"Epoch {epoch}.")
         tik = time.time()
 
         running_loss = 0
         for num, batch in enumerate(dataloader):
-            optimizer.zero_grad()
             result = model(input_ids=batch.input_ids, attention_mask=batch.attention_mask, labels=batch.labels)
             result.loss.backward()
             optimizer.step()
+            optimizer.zero_grad()
             running_loss += float(result.loss.item())  # float() to detach and not keep history (loss is differentiable!)
 
         print(f"Loss: {running_loss}")
@@ -113,9 +116,8 @@ if __name__ == "__main__":
         if best_loss < 0 or running_loss < best_loss:
             print("New best loss!")
             best_loss = running_loss
-
-            model.save_pretrained("data/models/mbart-for-ocr-post-correction-model")
-            tokenizer.save_pretrained("data/models/mbart-for-ocr-post-correction-tokenizer")
+            model.save_pretrained("data/models/mbart-for-ocr-post-correction-model-10")
+            tokenizer.save_pretrained("data/models/mbart-for-ocr-post-correction-tokenizer-10")
 
         tak = time.time()
         print(f"Completed epoch in {tak - tik} seconds.")
