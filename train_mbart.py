@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     print("Load tokenizer.")
     tokenizer = MBartTokenizer.from_pretrained("facebook/mbart-large-cc25", src_lang="de_DE", tgt_lang="de_DE")
-    # tokenizer.add_tokens(["<line-break>"])  # TODO: find out why this causes CUDA errors
+    tokenizer.add_tokens(["\t"])
     device = torch.device("cuda")
 
     ########################################################################################################################
@@ -27,19 +27,19 @@ if __name__ == "__main__":
 
     # include context windows in data
     X_train, Y_train = [], []
-    for ix in range(1, 7999):
-        X_train.append(f"{X_data[ix - 1]} <line-break> {X_data[ix]} <line-break> {X_data[ix + 1]}")
-        Y_train.append(f"{Y_data[ix - 1]} <line-break> {Y_data[ix]} <line-break> {Y_data[ix + 1]}")
+    for ix in range(1, 12799):
+        X_train.append(f"{X_data[ix - 1]} \t {X_data[ix]} \t {X_data[ix + 1]}")
+        Y_train.append(f"{Y_data[ix - 1]} \t {Y_data[ix]} \t {Y_data[ix + 1]}")
 
     X_dev, Y_dev = [], []
-    for ix in range(8001, 11999):
-        X_dev.append(f"{X_data[ix - 1]} <line-break> {X_data[ix]} <line-break> {X_data[ix + 1]}")
-        Y_dev.append(f"{Y_data[ix - 1]} <line-break> {Y_data[ix]} <line-break> {Y_data[ix + 1]}")
+    for ix in range(12801, 14399):
+        X_dev.append(f"{X_data[ix - 1]} \t {X_data[ix]} \t {X_data[ix + 1]}")
+        Y_dev.append(f"{Y_data[ix - 1]} \t {Y_data[ix]} \t {Y_data[ix + 1]}")
 
     X_test, Y_test = [], []
-    for ix in range(12001, len(X_data) - 1):
-        X_test.append(f"{X_data[ix - 1]} <line-break> {X_data[ix]} <line-break> {X_data[ix + 1]}")
-        Y_test.append(f"{Y_data[ix - 1]} <line-break> {Y_data[ix]} <line-break> {Y_data[ix + 1]}")
+    for ix in range(14401, len(X_data) - 1):
+        X_test.append(f"{X_data[ix - 1]} \t {X_data[ix]} \t {X_data[ix + 1]}")
+        Y_test.append(f"{Y_data[ix - 1]} \t {Y_data[ix]} \t {Y_data[ix + 1]}")
 
 
     # do not include context windows in data
@@ -88,6 +88,7 @@ if __name__ == "__main__":
 
     print("Initialize model and optimizer.")
     model = MBartForConditionalGeneration.from_pretrained("facebook/mbart-large-cc25").to(device)
+    model.resize_token_embeddings(len(tokenizer))
     optimizer = AdamW(model.parameters(), lr=0.000005)
 
     print("Create dataloader.")
