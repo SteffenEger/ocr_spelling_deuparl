@@ -4,14 +4,14 @@ import os
 
 import torch
 from natsort import natsorted
-from transformers import MBartTokenizer, MBartForConditionalGeneration
+from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
 import tqdm
 
 device = torch.device("cuda")
 
 if __name__ == "__main__":
-    model = MBartForConditionalGeneration.from_pretrained("data/models/mbart-for-ocr-post-correction-model-10").to(device)
-    tokenizer = MBartTokenizer.from_pretrained("data/models/mbart-for-ocr-post-correction-tokenizer-10", src_lang="de_DE", tgt_lang="de_DE")
+    model = M2M100ForConditionalGeneration.from_pretrained("data/models/m2m100-for-ocr-post-correction-model-50").to(device)
+    tokenizer = M2M100Tokenizer.from_pretrained("data/models/m2m100-for-ocr-post-correction-tokenizer-50", src_lang="de", tgt_lang="de")
     bucket_folders = list(natsorted(glob.glob("data/2_preprocessed/Reichstag/*/")))
 
     count_per_bucket = collections.Counter()
@@ -38,7 +38,7 @@ if __name__ == "__main__":
                 src_list = text[i: i + batch_size]
                 tokenized_inputs = tokenizer(src_list, return_tensors="pt", padding="longest")
                 tokenized_inputs = tokenized_inputs.to(device)
-                translated_tokens = model.generate(**tokenized_inputs, decoder_start_token_id=tokenizer.lang_code_to_id["de_DE"])
+                translated_tokens = model.generate(**tokenized_inputs, forced_bos_token_id=tokenizer.get_lang_id("de"))
                 translated_tokens = translated_tokens.detach()
                 output = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)
                 outputs += output
