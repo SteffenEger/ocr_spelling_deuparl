@@ -22,7 +22,6 @@ if __name__ == "__main__":
             with open(file_path, encoding="utf-8") as file:
                 text = file.readlines()
                  
-            # TODO: do the preprocessing here
             lines = text
 
             # Fix sentence being splited. They are mainly in parentheses. E.g
@@ -149,7 +148,6 @@ if __name__ == "__main__":
                 temp = temp[:sitzung_end.end()]
             
             ## Split string by new-line character to transform protocol back to line format
-            #lines = temp.split(' \n ')
             lines = temp.split('\n')
 
             # remove linebreaks
@@ -168,26 +166,13 @@ if __name__ == "__main__":
             lines = [re.sub(r'^(-|—|–|\s)+\s', '', line) for line in lines]
             lines = [re.sub(r'\b\s(-|—|–|\s)+$', '', line) for line in lines]
 
-            # replace digits
-            #lines = [re.sub(r'\d+', ' ', line).strip() for line in lines]
-
-            # remove double spaces
-            lines = [re.sub('\s\s+', ' ', line).strip() for line in lines]
-
             # reduce numerical sequences
             lines = [re.sub(r'((0)\s?){2,}', '\\2 ', line).strip() for line in lines]
 
             # filter doc
             lines = [line for line in lines if len(line) > 1]
 
-            # lowercase
-            lines_tokens = [[tok.lower() for tok in line.split()] for line in lines]  # FINDME: do split() instead of lemmatization
-
             ### ----------------------------------------------------------------
-
-            # rejoin token
-            lines = [" ".join(tokens) for tokens in lines_tokens]
-
             count_per_bucket[bucket_name] += 1
             with open(f"data/2_preprocessed/Bundestag/{bucket_name}/{count_per_bucket[bucket_name]}.txt", "a", encoding="utf-8") as file:
                 for line in lines:
