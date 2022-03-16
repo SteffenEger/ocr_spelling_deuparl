@@ -21,9 +21,11 @@ if __name__ == "__main__":
 
         for file_path in file_paths:
             with open(file_path, encoding="utf-8") as file:
-                text = file.read()
+                text = file.readlines()   
 
-            # the Bundestag protocols do not require OCR postcorrection, thus this script just copies them
+            lines = [re.sub(r'daß$', 'dass', line).strip() for line in text]             
+            lines = [re.sub(r'uß$', 'uss', line).strip() for line in text]
+            lines = [re.sub(r'(ußt)', 'usst', line).strip() for line in text]
 
             count_per_bucket[bucket_name] += 1
             with open(f"data/3_ocr_post_corrected_spelling_normalization/Bundestag/{bucket_name}/{count_per_bucket[bucket_name]}.txt", "w", encoding="utf-8") as file:
