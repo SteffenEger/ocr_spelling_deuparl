@@ -2,7 +2,7 @@ import collections
 import glob
 import os
 from natsort import natsorted
-
+import re
 
 import tqdm
 
@@ -29,4 +29,5 @@ if __name__ == "__main__":
 
             count_per_bucket[bucket_name] += 1
             with open(f"data/3_ocr_post_corrected_spelling_normalization/Bundestag/{bucket_name}/{count_per_bucket[bucket_name]}.txt", "w", encoding="utf-8") as file:
-                file.write(text)
+                for line in lines:
+                    file.write(line + "\n")
