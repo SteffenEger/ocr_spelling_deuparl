@@ -1,9 +1,9 @@
+import torch
 from typing import List
 from transformers import (
     M2M100ForConditionalGeneration,
     M2M100Tokenizer,
 )
-
 
 
 class Reischtag():
@@ -18,7 +18,8 @@ class Reischtag():
             cleaned = f.read()
         return cleaned
 
-    def generate_ocr_norma(self, year, session):
+    @staticmethod
+    def generate_ocr_norma(year, session):
         device = torch.device("cuda")
 
         model = M2M100ForConditionalGeneration.from_pretrained(
@@ -30,7 +31,7 @@ class Reischtag():
             tgt_lang="de"
         )
         try:
-            with open(f"data/2_preprocessed/Reischtag/{self.year}/{self.session}.txt", encoding="utf-8") as file:
+            with open(f"data/2_preprocessed/Reischtag/{year}/{session}.txt", encoding="utf-8") as file:
                 text = file.readlines()
         except Exception:
             raise Exception(f"{year} or {session} is not processed yet")
