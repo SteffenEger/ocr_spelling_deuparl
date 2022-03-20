@@ -13,7 +13,7 @@ pattern = re.compile(r"""
             """, re.VERBOSE)
 
 
-def lineStartsWithNumber(line):
+def line_start_with_number(line):
     if line[0].isdigit() or (len(line) > 1 and line[0] in ['L', 'Z'] and line[1] == '.'):
         return True
     if (line[0].islower() and len(line) > 2 and line[1] == '.' and line[0] != 'v'):
@@ -26,57 +26,57 @@ def lineStartsWithNumber(line):
         return True
     return False
 
-abbreviationsStart = ['.', '-', ' ']
+abbreviations_start = ['.', '-', ' ']
 words1 = ["a", "b", "d", "i", "K", "m", "s", "S", "u", "v", "z", "Z", 'D']
 
-def newLine(sentance, dotAt):
+def new_line(sentance, dot_at):
     if (line[c] not in ".?!;"):
         return False
     # abbreviations of words with one letter
-    if dotAt > 1 and (sentance[dotAt - 2] in abbreviationsStart) or dotAt == 1:
-        word1 = sentance[dotAt - 1:dotAt]
+    if dot_at > 1 and (sentance[dot_at - 2] in abbreviations_start) or dot_at == 1:
+        word1 = sentance[dot_at - 1:dot_at]
         if word1 in word1:
             return False
     # abbreviations of words with two letter
-    if (dotAt > 2 and sentance[dotAt - 3] in abbreviationsStart) or dotAt == 2:
-        word2 = sentance[dotAt - 2:dotAt]
+    if (dot_at > 2 and sentance[dot_at - 3] in abbreviations_start) or dot_at == 2:
+        word2 = sentance[dot_at - 2:dot_at]
         if word2 in ["ca", "rc", "re", "Fl", "Dr", "St", "Fr", "Kr", "Pr", "Sr"]:
             return False
     # abbreviations of words with three letter
-    if (dotAt > 3 and sentance[dotAt - 4] in abbreviationsStart) or dotAt == 3:
-        word3 = sentance[dotAt - 3:dotAt]
+    if (dot_at > 3 and sentance[dot_at - 4] in abbreviations_start) or dot_at == 3:
+        word3 = sentance[dot_at - 3:dot_at]
         if word3 in ["Bew", "Grf", "Str", "Inf", "Reg", "Grs", "Kgr", "Bzg", "dir"]:
             return False
     # abbreviations of words with four letter
-    if (dotAt > 4 and sentance[dotAt - 5] in abbreviationsStart) or dotAt == 4:
-        word4 = sentance[dotAt - 4:dotAt]
+    if (dot_at > 4 and sentance[dot_at - 5] in abbreviations_start) or dot_at == 4:
+        word4 = sentance[dot_at - 4:dot_at]
         if word4 in ["Prov", "Thlr"]:
             return False
     # abbreviations of words with five letter
-    if (dotAt > 5 and sentance[dotAt - 6] in abbreviationsStart) or dotAt == 5:
-        word5 = sentance[dotAt - 5:dotAt]
+    if (dot_at > 5 and sentance[dot_at - 6] in abbreviations_start) or dot_at == 5:
+        word5 = sentance[dot_at - 5:dot_at]
         if word5 in ["Preuß", "indir"]:
             return False
     # no linebreak before - and :
-    if (len(sentance) - dotAt) > 1 and sentance[dotAt + 1] == '-' and sentance[dotAt + 1] == ':':
+    if (len(sentance) - dot_at) > 1 and sentance[dot_at + 1] == '-' and sentance[dot_at + 1] == ':':
         return False
     # no linebreak before digit like 1.2
-    if re.search('[0-9]', sentance[dotAt - 1]) or re.search('[0-9]', sentance[dotAt - 2]):
+    if re.search('[0-9]', sentance[dot_at - 1]) or re.search('[0-9]', sentance[dot_at - 2]):
         return False
     # linebreak by '.Word' oder ..
-    if (len(sentance) - dotAt) > 1 and (sentance[dotAt + 1].isupper() or sentance[dotAt + 1] == '.'):
+    if (len(sentance) - dot_at) > 1 and (sentance[dot_at + 1].isupper() or sentance[dot_at + 1] == '.'):
         return True
     # linebreak by '. Word'
-    if (len(sentance) - dotAt) > 2 and sentance[dotAt + 2].isupper():
+    if (len(sentance) - dot_at) > 2 and sentance[dot_at + 2].isupper():
         return True
     # linebreak at end of line
-    if (len(sentance) - 1 == dotAt):
+    if (len(sentance) - 1 == dot_at):
         return True
     # else  no linebreak
     return False
 
 
-def removeOne(sentance, oneAt):
+def remove_one(sentance, oneAt):
     if (oneAt < len(sentance) - 1 and sentance[oneAt + 1].isalpha()):
         return True
     else:
@@ -196,27 +196,27 @@ if __name__ == "__main__":
 
                     for c in range(len(line)):
 
-                        if line[c] == '1' and removeOne(line, c):
+                        if line[c] == '1' and remove_one(line, c):
                             string_list = list(line)
                             string_list[c] = " "
                             line = "".join(string_list)
 
                         # for listings c == 0 and
-                        if c == len(line) - 1 and lineStartsWithNumber(line):
+                        if c == len(line) - 1 and line_start_with_number(line):
                             lines_fix.append("".join(buffer))
                             buffer = []
                             buffer.append(line)
                             # break
 
-                        elif lineStartsWithNumber(line):
+                        elif line_start_with_number(line):
                             continue
 
                         # line is part of a santence that alrady started
-                        elif c == len(line) - 1 and not newLine(line, c):
+                        elif c == len(line) - 1 and not new_line(line, c):
                             buffer.append(line[a - len(line) - 1:] + " ")
 
                         # found a dot and checks if it needs to be splitted
-                        elif newLine(line, c):
+                        elif new_line(line, c):
                             buffer.append(line[a - len(line) - 1: c + 1])
                             lines_fix.append("".join(buffer))
                             buffer = []
