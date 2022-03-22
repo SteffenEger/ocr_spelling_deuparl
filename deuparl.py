@@ -6,7 +6,11 @@ from transformers import (
 )
 import argparse
 import logging
+import os
+
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+
 
 class Reischtag():
     def __init__(self, year, session) -> None:
@@ -52,6 +56,7 @@ class Reischtag():
             translated_tokens = translated_tokens.detach()
             output = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)
             outputs += output
+        os.makedirs(f"data/3_ocr_post_corrected_spelling_normalization/Reichstag/{year}", exist_ok=True)
         with open(
             f"data/3_ocr_post_corrected_spelling_normalization/Reichstag/{year}/{session}.txt",
             "w", 
@@ -103,7 +108,7 @@ def main():
     for year in args.years:
         logging.info(f"Start {year}")
         Reischtag.generate_ocr_norma(year, args.session)
-        logging.info(f"Start {year} {args.sesssion}")
+        logging.info(f"Done {year} {args.session}")
 
 
 if __name__ == "__main__":
