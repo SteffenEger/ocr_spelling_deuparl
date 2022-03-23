@@ -4,7 +4,7 @@ A comparison between short and long lines on the basis of a law from the year 18
 
 References:
 _________________________________________________
- /     | original               | OCR & Spelling Normalization
+ o     | original               | OCR & Spelling Normalization
  short | short-lines_1877_1.txt | short-lines_1877_1_out.txt
  long  | long-lines_1877_1.txt  | long-lines_1877_1_out.txt
 _________________________________________________
