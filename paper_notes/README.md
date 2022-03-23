@@ -4,7 +4,7 @@ A comparison between short and long lines on the basis of a law from the year 18
 
 
 
-quantitative evaluation - Preprocessing - OCR - Spelling normalization
+Quantitative Wvaluation - Preprocessing - OCR - Spelling normalization
 
 From a short test passage of a transcript of a Reichstag session from 1880. The text passage has 143 lines at the end of the pipeline and starts from line number 3846.
 
