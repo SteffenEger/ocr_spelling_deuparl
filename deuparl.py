@@ -44,7 +44,7 @@ class Reischtag():
         
         batch_size = 4
         outputs = []
-        print(f"Starting Reichstag {year} {session} pls wait")
+        logging.info(f"Starting Reichstag {year} {session} pls wait")
         for i in range(0, len(text), batch_size):
             src_list = text[i: i + batch_size]
             tokenized_inputs = tokenizer(src_list, return_tensors="pt", padding="longest")
@@ -64,7 +64,7 @@ class Reischtag():
         ) as file:
             for line in outputs:
                 file.write(line + "\n")
-        print(f"Done generate Reichstag {year} {session}")
+        logging.info(f"Done generate Reichstag {year} {session}")
 
     def get_post_ocr_norma(self) -> List[str]:
         try:
@@ -106,9 +106,7 @@ def main():
     parser.add_argument("-s", "--session")
     args = parser.parse_args()
     for year in args.years:
-        logging.info(f"Start {year}")
         Reischtag.generate_ocr_norma(year, args.session)
-        logging.info(f"Done {year} {args.session}")
 
 
 if __name__ == "__main__":
